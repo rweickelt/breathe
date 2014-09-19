@@ -767,15 +767,12 @@ class ListingTypeSubRenderer(Renderer):
             renderer = self.renderer_factory.create_renderer(context)
             nodelist.extend(renderer.render())
 
-        # Add blank string at the start otherwise for some reason it renders
-        # the pending_xref tags around the kind in plain text
-        block = self.node_factory.literal_block(
-                "",
-                "",
-                *nodelist
-                )
+        block = []
+        block.append(self.node_factory.raw('','<div class="highlight"><pre>', format = 'html'))
+        block += nodelist
+        block.append(self.node_factory.raw('','</pre></div>', format = 'html'))
 
-        return [block]
+        return block
 
 class CodeLineTypeSubRenderer(Renderer):
 
@@ -785,9 +782,26 @@ class CodeLineTypeSubRenderer(Renderer):
         for item in self.data_object.highlight:
             context = self.context.create_child_context(item)
             renderer = self.renderer_factory.create_renderer(context)
-            nodelist.extend(renderer.render())
+            content = renderer.render()
+
+            lookuptable = {
+                'comment' : 'c',
+                'keyword' : 'k',
+                'keywordtype' : 'kt',
+                'normal' : 'p',
+                'keywordflow' : 'k',
+                'preprocessor' : 'cp',
+                'stringliteral' : 's',
+                'charliteral' : 'sc'
+            }
+            type = lookuptable.get(item.classxx, item.classxx)
+
+            nodelist.append(self.node_factory.raw('','<span class="{0}">'.format(type), format = 'html'))
+            nodelist.extend(content)
+            nodelist.append(self.node_factory.raw('','</span>'.format(type), format = 'html'))
 
         return nodelist
+
 
 class HighlightTypeSubRenderer(Renderer):
 
